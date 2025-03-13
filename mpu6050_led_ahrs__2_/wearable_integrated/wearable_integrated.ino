@@ -60,8 +60,8 @@ THE SOFTWARE.
 #define PIXELPIN       4        // Arduino pin connected to strip
 #define NUMPIXELS      16//16 or 62  // Total number of RGB LEDs on strip
 //No of steps per rotation for stepper motor
-const int stepsPerRevolution 
-#Stepper myStepper(stepsPerRevolution , 8, 9, 10, 11); //Pins eneter in IN1-IN2-IN3-IN4
+const int stepsPerRevolution = 2038
+Stepper myStepper(stepsPerRevolution, 8, 9, 10, 11);  // Correct pin configuration for stepper motor
 
 #ifdef __AVR__
   #include <avr/power.h>        // AVR Specific power library
@@ -171,6 +171,26 @@ void update_led_ahrs(float yaw, float pitch, float roll) {
   // Set the "nose indicator" and turn the device on
   pixels.setPixelColor(yaw_index, pixels.Color(255,255,255)); // White as can be
   pixels.show();
+}
+// ================================================================
+// ===                STEPPER MOTOR ROUTINE                     ===
+// ================================================================
+//to note that YPR values are in degrees not radians
+void  yaw_to_stepper(float yaw)
+{
+// Map yaw to stepper motor steps
+  int stepperSteps = map(yaw, -180, 180, -stepsPerRevolution, stepsPerRevolution);
+  myStepper.step(stepperSteps);  // Move the stepper motor based on yaw
+
+  // Optional: Use RPM instead of steps if you prefer continuous rotation
+  // int rpm = map(yaw_deg, -180, 180, -30, 30);
+  // myStepper.setSpeed(rpm);
+  // myStepper.step(stepsPerRevolution);  // Move the stepper motor
+  //I worry this might lead to too abrupt stepping, cos currently its mapping steps -- if this movement is too jerky then we try using speed
+  /*
+  myStepper.setSpeed(map(yaw_deg, -180, 180, -30, 30)); // Set speed based on yaw
+  myStepper.step(stepsPerRevolution);  // Move based on the mapped speed*/
+
 }
 
 
@@ -317,6 +337,8 @@ void loop() {
 
     // make pretty colors happen
     update_led_ahrs(yaw_deg, pitch_deg, roll_deg);
+    //have a function for stepper motor here
+    yaw_to_stepper(yaw_deg);
 
     // print some descriptive YRP data
     Serial.print("ypr:\t");
